@@ -7,58 +7,72 @@ import time
 
 from ISStreamer.Streamer import Streamer
 
-#Setup
+import threading
+
+
+class automate():
+
+  can_buy = False
+  price_window_thread = True
+  
+  def get_time(self):
+
+    #Get current 24HR timestamp
+    ts = time.time()
+    
+    current_time = datetime.datetime.fromtimestamp(ts).strftime('%H:%M:%S')
+    timestring_split = map(int, re.split(r"[:,]", current_time))
+    current_time = timestring_split[0]*3600+timestring_split[1]*60+timestring_split[2]
+    
+    #Check if we are within trading hours(6:30:00 --> 23400 & 13:00:00 --> 46800). Times range between 0 - 86399
+    if(0 < current_time < '86399'):
+        self.can_buy = True
+        
+  def price_window(self, stock_list, time_interval):
+    
+    #In this function, calculate the average price of a stock over a certain amount of time
+    quote = my_trader.last_trade_price("AMD")
+    print quote
+    threading.Timer(time_interval, auto.price_window, [stock_list, time_interval]).start()
+    
+    
+        
+    
+
+
+#Import class Robinhood from Robinhood.py file
 my_trader = Robinhood()
+
+#Make instance of class automate
+auto = automate()
 
 #login
 username = raw_input("Username: ")
 password = raw_input("Password: ")
 my_trader.login(username, password)
 
-    
-streamer = Streamer(bucket_name="Stock Tracker", bucket_key="Stock_Tracker_020817", ini_file_location="./isstreamer.ini")
 
+#Monitor price of stock(s) for a certain time period
+stocks_to_monitor = ["AMD","JNUG"]
+time_window = 5.0 #Time window in seconds
+auto.price_window(stocks_to_monitor, time_window)
+
+    
 
 while True:
-
-    #Get current 24HR timestamp
-    ts = time.time()
-    current_time = datetime.datetime.fromtimestamp(ts).strftime('%H:%M:%S')
-    
-    #Look for timstamp 06:3x:xx - This is when the market opens
-    if re.findall(r'[0][6][:][3][0-9]{1}[:][0-9]{2}', current_time):
-        open_time = current_time
-        print "Market has opened"
-      
-    #Look for timstamp 13:00:xx - This is when the market closes
-    if re.findall(r'[0][6][:][0][0][:][0-9]{2}', current_time):
-        close_time = current_time
-        print "Market has closed"
-        
-    #Convert open_time and close_time to minute notation - 1440 minutes in a day
+    #Get current time and allow purchases if within trading hours
+    auto.get_time()
     
     
+   
     
-        
+  
     
-    print(current_time)
-    quote = my_trader.last_trade_price("AMD")
-    print(quote)
-    #re.findall(r'\d+', quote)
-    
-    
-    streamer.log("Current AMD quote", "{value}".format(value=quote))
-    #streamer.log("Altitude", "{value}".format(value=quote))
-    time.sleep(10)
-
-
-
+  
 
 
     
     
 
 
-#print(my_trader.quote_data("AMD"))
-#print('\n')
-#print(my_trader.positions())
+
