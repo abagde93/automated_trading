@@ -33,13 +33,17 @@ class automate():
   def price_window(self, stock_list, time_interval):
     
     #In this function, populate an array of quotes for each stock. The quote will be updated every minute, and added to array
-    amd_quote = my_trader.last_trade_price("AMD")
-    amd_quote_array.append(amd_quote)
+    amd_quote = float(my_trader.last_trade_price("AMD"))
+    #self.amd_quote_array.append(amd_quote)
     
     #Figure out way to push values through array - in FILO architecture. If array is full, last value should be deleted/popped off, and new value should be the
     #first item in the array. Try doing this with an array containing 10 quotes
     
-    
+    while len(self.amd_quote_array) <= 10:
+        self.amd_quote_array.insert(0, amd_quote)
+    self.amd_quote_array.pop()
+    print(self.amd_quote_array)
+    #print(sum(self.amd_quote_array) / float(len(self.amd_quote_array)))
     
     #Call this function every time interval(1 minute or so). Make sure this is the last line in the function
     threading.Timer(time_interval, auto.price_window, [stock_list, time_interval]).start()
@@ -63,7 +67,7 @@ my_trader.login(username, password)
 
 #Get a quote for stocks every 60 seconds - this function has its own thread
 stocks_to_monitor = ["AMD","JNUG"]
-time_window = 60.0 #Time window in seconds
+time_window = 10.0 #Time window in seconds
 auto.price_window(stocks_to_monitor, time_window)
 
 #Every 15 minutes take average of ***_quote_arrays, and compare to trade price at market open
