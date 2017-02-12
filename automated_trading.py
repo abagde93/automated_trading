@@ -13,8 +13,8 @@ import threading
 class automate():
 
   can_buy = False
-  amd_quote_array = []
-  jnug_quote_array = []
+  
+  
   
   
   def get_time(self):
@@ -30,23 +30,34 @@ class automate():
     if(0 < current_time < '86399'):
         self.can_buy = True
         
-  def price_window(self, stock_list, time_interval):
+  def price_window(self, stock_list, time_interval, quote_array_2D):
     
-    #In this function, populate an array of quotes for each stock. The quote will be updated every minute, and added to array
-    amd_quote = float(my_trader.last_trade_price("AMD"))
-    #self.amd_quote_array.append(amd_quote)
+    #In this function, populate an matrix of quotes for each stock. The quote will be updated every minute, and added to array for each stock
+    #Matrix should be of the form of below
     
-    #Figure out way to push values through array - in FILO architecture. If array is full, last value should be deleted/popped off, and new value should be the
-    #first item in the array. Try doing this with an array containing 10 quotes
+    #[[12.04, 12.05, 12.04, 12.07, 12.07, 12.08, 12.10, 12.03, 12.03],
+    # [13.24, 13.25, 13.26, 13.27, 13.21, 13.22, 13.24, 13.21, 13.20],
+    # [1.67, 1.68, 1.66, 1.65, 1.64, 1.62, 1.66, 1.69, 1.64],
+    # [8.06, 8.09, 8.04, 8.03, 8.02, 8.01, 7.99, 8.01, 8.02]]
     
-    while len(self.amd_quote_array) <= 10:
-        self.amd_quote_array.insert(0, amd_quote)
-    self.amd_quote_array.pop()
-    print(self.amd_quote_array)
-    #print(sum(self.amd_quote_array) / float(len(self.amd_quote_array)))
-    
+    #Create index to keep track of which stock we are processing
+    stock_index = 0
+    for item in stock_list:
+      quote = float(my_trader.last_trade_price(item))
+      
+      
+      #Figure out way to push values through array - in FILO architecture. If array is full, last value should be deleted/popped off, and new value should be the
+      #first item in the array. Try doing this with an array containing 10 quotes
+      
+      while len(quote_array_2D[stock_index]) <= 10:
+          quote_array_2D[stock_index].insert(0, quote)
+      quote_array_2D[stock_index].pop()
+      stock_index = stock_index + 1
+      print(quote_array_2D)
+      #print(sum(self.amd_quote_array) / float(len(self.amd_quote_array)))
+      
     #Call this function every time interval(1 minute or so). Make sure this is the last line in the function
-    threading.Timer(time_interval, auto.price_window, [stock_list, time_interval]).start()
+    threading.Timer(time_interval, auto.price_window, [stock_list, time_interval, quote_array_2D]).start()
     
     
         
@@ -66,9 +77,14 @@ my_trader.login(username, password)
 
 
 #Get a quote for stocks every 60 seconds - this function has its own thread
-stocks_to_monitor = ["AMD","JNUG"]
-time_window = 10.0 #Time window in seconds
-auto.price_window(stocks_to_monitor, time_window)
+stocks_to_monitor = ['AMD', 'TGB', 'MSTX', 'NAK']
+time_window = 3.0 #Time window in seconds
+
+#Initializing quote matrix. Each stock has it's own row with 10 quotes at a time
+cols_count,rows_count = 10,len(stocks_to_monitor)
+quote_matrix = [[0 for x in range(cols_count)] for x in range(rows_count)]
+
+auto.price_window(stocks_to_monitor, time_window, quote_matrix)
 
 #Every 15 minutes take average of ***_quote_arrays, and compare to trade price at market open
 
