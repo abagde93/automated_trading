@@ -12,8 +12,16 @@ import threading
 
 class automate():
 
+
+  #global variable that is set in get_time - decides whether stocks can be bought
+  #depending on if market is open
   can_buy = False
   
+  #store contents of quote_array_2D in price_window to access globally
+  global_quote_matrix = 0
+  
+  #store contents of quote average for each stock over time period
+  avg_quotes = []
   
   
   
@@ -53,11 +61,29 @@ class automate():
           quote_array_2D[stock_index].insert(0, quote)
       quote_array_2D[stock_index].pop()
       stock_index = stock_index + 1
-      print(quote_array_2D)
-      #print(sum(self.amd_quote_array) / float(len(self.amd_quote_array)))
+      #print(quote_array_2D)
+      
+      
+      self.global_quote_matrix = quote_array_2D
+    print(self.global_quote_matrix)
       
     #Call this function every time interval(1 minute or so). Make sure this is the last line in the function
     threading.Timer(time_interval, auto.price_window, [stock_list, time_interval, quote_array_2D]).start()
+
+  def compare_price(self, time_interval, stocks_to_monitor):
+      self.avg_quotes = [None] * len(stocks_to_monitor)
+      #print(self.avg_quotes)
+      for stock in range(0, len(stocks_to_monitor)):
+          self.avg_quotes[stock] = sum(self.global_quote_matrix[stock]) / float(len(self.global_quote_matrix[stock]))
+      
+      print(self.avg_quotes)
+      auto.buy_sell()
+      
+      #Call this function every time interval(1 minute or so). Make sure this is the last line in the function  
+      threading.Timer(time_interval, auto.compare_price, [time_interval, stocks_to_monitor]).start()
+   
+  def buy_sell(self):
+      print "in buysell"
     
     
         
@@ -78,15 +104,18 @@ my_trader.login(username, password)
 
 #Get a quote for stocks every 60 seconds - this function has its own thread
 stocks_to_monitor = ['AMD', 'TGB', 'MSTX', 'NAK']
-time_window = 3.0 #Time window in seconds
+time_window_quote = 6.0 #Time window in seconds
 
 #Initializing quote matrix. Each stock has it's own row with 10 quotes at a time
 cols_count,rows_count = 10,len(stocks_to_monitor)
 quote_matrix = [[0 for x in range(cols_count)] for x in range(rows_count)]
 
-auto.price_window(stocks_to_monitor, time_window, quote_matrix)
+auto.price_window(stocks_to_monitor, time_window_quote, quote_matrix)
 
-#Every 15 minutes take average of ***_quote_arrays, and compare to trade price at market open
+#Every 10 minutes take average of quotes for each stock, and compare to trade price at market open
+#This function also has it's own thread
+time_window_compare = 60.0
+auto.compare_price(time_window_compare, stocks_to_monitor)
 
 
 
