@@ -17,6 +17,9 @@ class automate():
   #depending on if market is open
   can_buy = False
   
+  #store contents of quotes at market open
+  open_price = []
+  
   #store contents of quote_array_2D in price_window to access globally
   global_quote_matrix = 0
   
@@ -25,7 +28,7 @@ class automate():
   
   
   
-  def get_time(self):
+  def get_time(self, stocks_to_monitor):
 
     #Get current 24HR timestamp
     ts = time.time()
@@ -35,11 +38,21 @@ class automate():
     current_time = timestring_split[0]*3600+timestring_split[1]*60+timestring_split[2]
     
     #Check if we are within trading hours(6:30:00 --> 23400 & 13:00:00 --> 46800). Times range between 0 - 86399
-    if(0 < current_time < '86399'):
+    if(0 < current_time < 86399):
         self.can_buy = True
         
+    #Fill open_price array with prices of quotes at market open(not pre-market trading, yet).
+    #Do this between 6:30:00 AM and 6:31:00 AM for possibilities of lag to make sure we get an initial quote 
+    if(0 < current_time < 86399):
+        self.open_price = [None] * len(stocks_to_monitor)
+        
+        for stock in range(0, len(stocks_to_monitor)):
+          self.open_price[stock] = float(my_trader.last_trade_price(stocks_to_monitor[stock]))
+          print("Price at market open for " + stocks_to_monitor[stock] + ": " + str(self.open_price[stock]))
+        
+        
   def price_window(self, stock_list, time_interval, quote_array_2D):
-    
+    print datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S')
     #In this function, populate an matrix of quotes for each stock. The quote will be updated every minute, and added to array for each stock
     #Matrix should be of the form of below
     
@@ -63,8 +76,8 @@ class automate():
       stock_index = stock_index + 1
       #print(quote_array_2D)
       
-      
       self.global_quote_matrix = quote_array_2D
+    
     print(self.global_quote_matrix)
       
     #Call this function every time interval(1 minute or so). Make sure this is the last line in the function
@@ -83,7 +96,7 @@ class automate():
       threading.Timer(time_interval, auto.compare_price, [time_interval, stocks_to_monitor]).start()
    
   def buy_sell(self):
-      print "in buysell"
+    print "peeping"
     
     
         
@@ -104,7 +117,7 @@ my_trader.login(username, password)
 
 #Get a quote for stocks every 60 seconds - this function has its own thread
 stocks_to_monitor = ['AMD', 'TGB', 'MSTX', 'NAK']
-time_window_quote = 6.0 #Time window in seconds
+time_window_quote = 60.0 #Time window in seconds
 
 #Initializing quote matrix. Each stock has it's own row with 10 quotes at a time
 cols_count,rows_count = 10,len(stocks_to_monitor)
@@ -114,7 +127,7 @@ auto.price_window(stocks_to_monitor, time_window_quote, quote_matrix)
 
 #Every 10 minutes take average of quotes for each stock, and compare to trade price at market open
 #This function also has it's own thread
-time_window_compare = 60.0
+time_window_compare = 600.0
 auto.compare_price(time_window_compare, stocks_to_monitor)
 
 
@@ -123,7 +136,7 @@ auto.compare_price(time_window_compare, stocks_to_monitor)
 
 while True:
     #Get current time and allow purchases if within trading hours
-    auto.get_time()
+    auto.get_time(stocks_to_monitor)
     
     
    
