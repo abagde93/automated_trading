@@ -12,6 +12,8 @@ import threading
 
 class automate():
 
+  #Initiate log file
+  log_file = open('stock_report.txt', 'w')
 
   #global variable that is set in get_time - decides whether stocks can be bought
   #depending on if market is open
@@ -34,7 +36,7 @@ class automate():
   
   
   def get_time(self, stocks_to_monitor):
-
+    print("peepppep")
     #Get current 24HR timestamp
     ts = time.time()
     
@@ -109,17 +111,18 @@ class automate():
             print("In buysell")
             print(self.open_price_full)
             #If particular stock is up 2% or more
-            if(self.avg_quotes[stock]/(float(str(self.open_price_full[stock]))) >= 1.00):
+            if(self.avg_quotes[stock]/(float(str(self.open_price_full[stock]))) >= 0.5):
                 #if(self.stock_bought[stock] != 1):
-                    print(stocks_to_monitor[stock] + " bought at: " + str(self.avg_quote_stock))
+                    print(stocks_to_monitor[stock] + " bought at: " + str(self.avg_quotes[stock]))
+                    self.log_file.write(stocks_to_monitor[stock] + " bought at: " + str(self.avg_quotes[stock]) + "\n")
+                    self.log_file.flush()
           
     
       
     
+ 
+  
     
-        
-    
-
 
 #Import class Robinhood from Robinhood.py file
 my_trader = Robinhood()
@@ -135,7 +138,7 @@ my_trader.login(username, password)
 
 #Get a quote for stocks every 60 seconds - this function has its own thread
 stocks_to_monitor = ['AMD', 'TGB', 'MSTX', 'NAK']
-time_window_quote = 15.0 #Time window in seconds
+time_window_quote = 10.0 #Time window in seconds
 
 #Initializing quote matrix. Each stock has it's own row with 10 quotes at a time
 cols_count,rows_count = 10,len(stocks_to_monitor)
@@ -145,7 +148,7 @@ auto.price_window(stocks_to_monitor, time_window_quote, quote_matrix)
 
 #Every 10 minutes take average of quotes for each stock, and compare to trade price at market open
 #This function also has it's own thread
-time_window_compare = 30.0
+time_window_compare = 20.0
 auto.compare_price(time_window_compare, stocks_to_monitor)
 
 
