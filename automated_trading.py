@@ -36,7 +36,6 @@ class automate():
   
   
   def get_time(self, stocks_to_monitor):
-    print("peepppep")
     #Get current 24HR timestamp
     ts = time.time()
     
@@ -45,22 +44,23 @@ class automate():
     current_time = timestring_split[0]*3600+timestring_split[1]*60+timestring_split[2]
     
     #Check if we are within trading hours(6:30:00 --> 23400 & 13:00:00 --> 46800). Times range between 0 - 86399
-    if(0 < current_time < 86399):
+    if(23400 < current_time < 46800):
         self.can_buy = True
         
     #Fill open_price array with prices of quotes at market open(not pre-market trading, yet).
     #Do this between 6:30:00 AM and 6:31:00 AM for possibilities of lag to make sure we get an initial quote 
-    if(0 < current_time < 86399):
+    if(23400 < current_time < 23460):
         self.open_price = [None] * len(stocks_to_monitor)
         
         for stock in range(0, len(stocks_to_monitor)):
           self.open_price[stock] = float(my_trader.last_trade_price(stocks_to_monitor[stock]))
-          #print("Price at market open for " + stocks_to_monitor[stock] + ": " + str(self.open_price[stock]))
+          self.log_file.write("Price at market open for " + stocks_to_monitor[stock] + ": " + str(self.open_price[stock]))
+          self.log_file.flush()
         self.open_price_full = self.open_price
     
         
   def price_window(self, stock_list, time_interval, quote_array_2D):
-    print datetime.datetime.fromtimestamp(time.time()).strftime('%H:%M:%S')
+    print datetime.datetime.fromtimestamp(time.time()).strftime('%B %d, %Y %H:%M:%S')
     #In this function, populate an matrix of quotes for each stock. The quote will be updated every minute, and added to array for each stock
     #Matrix should be of the form of below
     
@@ -111,10 +111,12 @@ class automate():
             print("In buysell")
             print(self.open_price_full)
             #If particular stock is up 2% or more
-            if(self.avg_quotes[stock]/(float(str(self.open_price_full[stock]))) >= 0.5):
+            if(self.avg_quotes[stock]/(float(str(self.open_price_full[stock]))) >= 1.02):
                 #if(self.stock_bought[stock] != 1):
                     print(stocks_to_monitor[stock] + " bought at: " + str(self.avg_quotes[stock]))
-                    self.log_file.write(stocks_to_monitor[stock] + " bought at: " + str(self.avg_quotes[stock]) + "\n")
+                    ts = time.time()
+                    current_time = datetime.datetime.fromtimestamp(ts).strftime('%B %d, %Y %H:%M:%S')
+                    self.log_file.write(str(current_time) + ": " + stocks_to_monitor[stock] + " bought at: " + str(self.avg_quotes[stock]) + "\n")
                     self.log_file.flush()
           
     
@@ -138,7 +140,7 @@ my_trader.login(username, password)
 
 #Get a quote for stocks every 60 seconds - this function has its own thread
 stocks_to_monitor = ['AMD', 'TGB', 'MSTX', 'NAK']
-time_window_quote = 10.0 #Time window in seconds
+time_window_quote = 60.0 #Time window in seconds
 
 #Initializing quote matrix. Each stock has it's own row with 10 quotes at a time
 cols_count,rows_count = 10,len(stocks_to_monitor)
@@ -148,7 +150,7 @@ auto.price_window(stocks_to_monitor, time_window_quote, quote_matrix)
 
 #Every 10 minutes take average of quotes for each stock, and compare to trade price at market open
 #This function also has it's own thread
-time_window_compare = 20.0
+time_window_compare = 600.0
 auto.compare_price(time_window_compare, stocks_to_monitor)
 
 
